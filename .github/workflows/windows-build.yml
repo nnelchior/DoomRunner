@@ -16,18 +16,33 @@ jobs:
           target: 'desktop'
           arch: 'win64_msvc2019_64'
 
+      - name: Install Minizip via vcpkg
+        run: |
+          vcpkg install minizip:x64-windows
+          vcpkg integrate install
+
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
-      - name: Build with CMake
+      - name: Build with QMake
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH=$Env:Qt5_Dir
-          cmake --build . --config Release
+          # Сообщаем qmake, где лежат заголовочные файлы и библиотеки minizip
+          qmake ../DoomRunner.pro "INCLUDEPATH+=C:/vcpkg/installed/x64-windows/include" "LIBS+=-LC:/vcpkg/installed/x64-windows/lib -lminizip"
+          nmake release
+
+      - name: Prepare Deployment (Collect DLLs)
+        run: |
+          mkdir deploy
+          copy build\release\DoomRunner.exe deploy\
+          # windeployqt копирует нужные Qt-библиотеки, чтобы EXE запускался у тебя
+          windeployqt --release --no-translations --no-compiler-runtime deploy\DoomRunner.exe
+          # Копируем zlib, которая нужна для minizip
+          copy "C:/vcpkg/installed/x64-windows/bin/zlib1.dll" deploy\
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DoomRunner-Windows
-          path: build/Release/DoomRunner.exe
+          name: DoomRunner-Patched-Windows
+          path: deploy/
