@@ -1,0 +1,33 @@
+name: Build Windows
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '5.15.2' # Стабильная версия для этого проекта
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build with CMake
+        run: |
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_PREFIX_PATH=$Env:Qt5_Dir
+          cmake --build . --config Release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: DoomRunner-Windows
+          path: build/Release/DoomRunner.exe
