@@ -34,21 +34,18 @@ jobs:
           mkdir -p deploy
           cp build/release/DoomRunner.exe deploy/
           
-          # 1. Собираем библиотеки Qt
+          # 1. Основной деплой Qt
           windeployqt --release --no-translations --no-compiler-runtime deploy/DoomRunner.exe
           
-          # 2. Копируем библиотеки компилятора и зависимости (те самые из ошибок)
-          cp /ucrt64/bin/libgcc_s_seh-1.dll deploy/
-          cp /ucrt64/bin/libstdc++-6.dll deploy/
-          cp /ucrt64/bin/libwinpthread-1.dll deploy/
-          cp /ucrt64/bin/libminizip-1.dll deploy/
-          cp /ucrt64/bin/zlib1.dll deploy/
-          
-          # 3. Дополнительные библиотеки, которые часто требует Qt6 в MSYS2
-          cp /ucrt64/bin/libdouble-conversion.dll deploy/ || true
-          cp /ucrt64/bin/libicuin*.dll deploy/ || true
-          cp /ucrt64/bin/libicuuc*.dll deploy/ || true
-          cp /ucrt64/bin/libicudt*.dll deploy/ || true
+          # 2. Копируем ВСЕ потенциальные зависимости из папки bin
+          # Мы берем те, что ты уже указал, и те, что обычно идут с ними в комплекте
+          cd /ucrt64/bin/
+          cp libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll /d/a/DoomRunner/DoomRunner/deploy/
+          cp libminizip-1.dll zlib1.dll libbz2-1.dll libfreetype-6.dll /d/a/DoomRunner/DoomRunner/deploy/
+          cp libharfbuzz-0.dll libmd4c.dll libpng16-16.dll libgraphite2.dll /d/a/DoomRunner/DoomRunner/deploy/
+          cp libdouble-conversion.dll libicuin*.dll libicuuc*.dll libicudt*.dll /d/a/DoomRunner/DoomRunner/deploy/
+          cp libpcre2-16-0.dll libpcre2-8-0.dll libzstd.dll libbrotlicommon.dll libbrotlidec.dll /d/a/DoomRunner/DoomRunner/deploy/
+          cp libintl-8.dll libiconv-2.dll /d/a/DoomRunner/DoomRunner/deploy/ || true
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
