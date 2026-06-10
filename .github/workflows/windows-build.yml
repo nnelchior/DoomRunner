@@ -27,30 +27,23 @@ jobs:
           mkdir build
           cd build
           qmake6 ../DoomRunner.pro CONFIG+=release
-          make -j2
+          make -j$(nproc)
 
       - name: Prepare Deployment
         run: |
-          mkdir -p deploy
-          cp build/release/DoomRunner.exe deploy/
+          DEPLOY_PATH="$(pwd)/deploy"
+          mkdir -p "$DEPLOY_PATH"
+          EXE_FILE="build/release/DoomRunner.exe"
           
-          # 1. Сначала стандартный деплой Qt
-          windeployqt --release --no-translations --no-compiler-runtime deploy/DoomRunner.exe
+          # 1. Копируем сам экзешник
+          cp "$EXE_FILE" "$DEPLOY_PATH/"
           
-          # 2. "Ковровая бомбардировка" - копируем все зависимости MSYS2
-          # Этот список покрывает GCC, GLib, ICU, Compression и графические либы
-          cd /ucrt64/bin/
-          cp libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll deploy/
-          cp libminizip-1.dll zlib1.dll libbz2-1.dll libglib-2.0-0.dll deploy/
-          cp libintl-8.dll libiconv-2.dll libpcre2-8-0.dll libpcre2-16-0.dll deploy/
-          cp libfreetype-6.dll libharfbuzz-0.dll libpng16-16.dll libgraphite2.dll deploy/
-          cp libdouble-conversion.dll libmd4c.dll libzstd.dll deploy/
-          cp libbrotlicommon.dll libbrotlidec.dll deploy/
+          # 2. Умное копирование зависимостей через ldd
+          # Эта команда находит все DLL, от которых зависит проект в среде MSYS2, и копирует их
+          ldd "$EXE_FILE" | grep /ucrt64/ | awk '{print $3}' | xargs -I{} cp {} "$DEPLOY_PATH/"
           
-          # 3. Копируем ICU (библиотеки юникода, их много, берем все подходящие)
-          cp libicuin*.dll deploy/ || true
-          cp libicuuc*.dll deploy/ || true
-          cp libicudt*.dll deploy/ || true
+          # 3. Деплой ресурсов Qt (плагины, платформы)
+          windeployqt --release --no-translations --no-compiler-runtime "$DEPLOY_PATH/DoomRunner.exe"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
