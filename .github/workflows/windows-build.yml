@@ -34,21 +34,26 @@ jobs:
           mkdir -p deploy
           cp build/release/DoomRunner.exe deploy/
           
-          # 1. Основной деплой Qt
+          # 1. Сначала стандартный деплой Qt
           windeployqt --release --no-translations --no-compiler-runtime deploy/DoomRunner.exe
           
-          # 2. Копируем ВСЕ потенциальные зависимости из папки bin
-          # Мы берем те, что ты уже указал, и те, что обычно идут с ними в комплекте
+          # 2. "Ковровая бомбардировка" - копируем все зависимости MSYS2
+          # Этот список покрывает GCC, GLib, ICU, Compression и графические либы
           cd /ucrt64/bin/
-          cp libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll /d/a/DoomRunner/DoomRunner/deploy/
-          cp libminizip-1.dll zlib1.dll libbz2-1.dll libfreetype-6.dll /d/a/DoomRunner/DoomRunner/deploy/
-          cp libharfbuzz-0.dll libmd4c.dll libpng16-16.dll libgraphite2.dll /d/a/DoomRunner/DoomRunner/deploy/
-          cp libdouble-conversion.dll libicuin*.dll libicuuc*.dll libicudt*.dll /d/a/DoomRunner/DoomRunner/deploy/
-          cp libpcre2-16-0.dll libpcre2-8-0.dll libzstd.dll libbrotlicommon.dll libbrotlidec.dll /d/a/DoomRunner/DoomRunner/deploy/
-          cp libintl-8.dll libiconv-2.dll /d/a/DoomRunner/DoomRunner/deploy/ || true
+          cp libgcc_s_seh-1.dll libstdc++-6.dll libwinpthread-1.dll deploy/
+          cp libminizip-1.dll zlib1.dll libbz2-1.dll libglib-2.0-0.dll deploy/
+          cp libintl-8.dll libiconv-2.dll libpcre2-8-0.dll libpcre2-16-0.dll deploy/
+          cp libfreetype-6.dll libharfbuzz-0.dll libpng16-16.dll libgraphite2.dll deploy/
+          cp libdouble-conversion.dll libmd4c.dll libzstd.dll deploy/
+          cp libbrotlicommon.dll libbrotlidec.dll deploy/
+          
+          # 3. Копируем ICU (библиотеки юникода, их много, берем все подходящие)
+          cp libicuin*.dll deploy/ || true
+          cp libicuuc*.dll deploy/ || true
+          cp libicudt*.dll deploy/ || true
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DoomRunner-Full-Pack
+          name: DoomRunner-Final-Pack
           path: deploy/
