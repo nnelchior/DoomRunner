@@ -32,12 +32,26 @@ jobs:
       - name: Prepare Deployment
         run: |
           mkdir -p deploy
-          # Исправленный путь: qmake кладет exe в папку release
           cp build/release/DoomRunner.exe deploy/
+          
+          # 1. Собираем библиотеки Qt
           windeployqt --release --no-translations --no-compiler-runtime deploy/DoomRunner.exe
+          
+          # 2. Копируем библиотеки компилятора и зависимости (те самые из ошибок)
+          cp /ucrt64/bin/libgcc_s_seh-1.dll deploy/
+          cp /ucrt64/bin/libstdc++-6.dll deploy/
+          cp /ucrt64/bin/libwinpthread-1.dll deploy/
+          cp /ucrt64/bin/libminizip-1.dll deploy/
+          cp /ucrt64/bin/zlib1.dll deploy/
+          
+          # 3. Дополнительные библиотеки, которые часто требует Qt6 в MSYS2
+          cp /ucrt64/bin/libdouble-conversion.dll deploy/ || true
+          cp /ucrt64/bin/libicuin*.dll deploy/ || true
+          cp /ucrt64/bin/libicuuc*.dll deploy/ || true
+          cp /ucrt64/bin/libicudt*.dll deploy/ || true
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DoomRunner-Final-Build
+          name: DoomRunner-Full-Pack
           path: deploy/
