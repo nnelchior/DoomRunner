@@ -31,13 +31,13 @@ jobs:
 
       - name: Prepare Deployment
         run: |
-          mkdir deploy
-          cp build/DoomRunner.exe deploy/
-          # Собираем все нужные DLL в одну папку
+          mkdir -p deploy
+          # Исправленный путь: qmake кладет exe в папку release
+          cp build/release/DoomRunner.exe deploy/
           windeployqt --release --no-translations --no-compiler-runtime deploy/DoomRunner.exe
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DoomRunner-MSYS2-Build
+          name: DoomRunner-Final-Build
           path: deploy/
